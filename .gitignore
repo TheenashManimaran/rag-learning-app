@@ -1,0 +1,52 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# FastAPI / local runtime data
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded/generated learning assets
+*.faiss
+
+# Frontend dependencies/build output, if added later
+node_modules/
+frontend/dist/
+frontend/build/
+.vite/
+
+# Logs
+*.log
+logs/
+
+# IDE/editor files
+.idea/
+.vscode/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

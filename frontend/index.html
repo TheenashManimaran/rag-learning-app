@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG Learning Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>RAG Learning Studio</h1>
+        <p>Grounded Q&A, adaptive quizzes, and progress tracking from your PDFs.</p>
+      </div>
+      <nav>
+        <button class="tab active" data-view="upload">Upload</button>
+        <button class="tab" data-view="chat">Q&A</button>
+        <button class="tab" data-view="quiz">Quiz</button>
+        <button class="tab" data-view="dashboard">Dashboard</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="upload" class="view active">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Upload PDF</h2>
+            <span id="apiStatus" class="status">Checking API</span>
+          </div>
+          <form id="uploadForm" class="upload-box">
+            <input id="pdfFile" type="file" accept="application/pdf" required />
+            <button type="submit">Process document</button>
+          </form>
+          <div id="uploadResult" class="message"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Documents</h2>
+            <button id="refreshDocs" type="button">Refresh</button>
+          </div>
+          <div id="documents" class="document-list"></div>
+        </div>
+      </section>
+
+      <section id="chat" class="view">
+        <div class="workspace">
+          <aside class="panel side">
+            <h2>Document</h2>
+            <select id="chatDocument"></select>
+          </aside>
+          <section class="panel fill">
+            <h2>Ask Questions</h2>
+            <div id="chatLog" class="chat-log"></div>
+            <form id="askForm" class="composer">
+              <input id="questionInput" type="text" placeholder="Ask a document-grounded question" required />
+              <button type="submit">Ask</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="quiz" class="view">
+        <div class="workspace">
+          <aside class="panel side">
+            <h2>Quiz Setup</h2>
+            <label>
+              Document
+              <select id="quizDocument"></select>
+            </label>
+            <label>
+              Questions
+              <input id="quizCount" type="number" min="1" max="10" value="5" />
+            </label>
+            <button id="generateQuiz" type="button">Generate quiz</button>
+            <div id="adaptiveProfile" class="message"></div>
+          </aside>
+          <section class="panel fill">
+            <h2>Quiz</h2>
+            <div id="quizList" class="quiz-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="dashboard" class="view">
+        <div class="stats-grid">
+          <article class="metric">
+            <span>Average Score</span>
+            <strong id="avgScore">0%</strong>
+          </article>
+          <article class="metric">
+            <span>Attempts</span>
+            <strong id="attemptCount">0</strong>
+          </article>
+          <article class="metric wide">
+            <span>Weak Topics</span>
+            <strong id="weakTopics">None yet</strong>
+          </article>
+        </div>
+        <div class="panel">
+          <h2>Topic Performance</h2>
+          <div id="topicPerformance" class="topic-list"></div>
+        </div>
+        <div class="panel">
+          <h2>Progress Trend</h2>
+          <div id="trend" class="trend"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

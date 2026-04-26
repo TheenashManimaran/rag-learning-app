@@ -1,0 +1,290 @@
+:root {
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --ink: #17202a;
+  --muted: #667085;
+  --line: #d8dee9;
+  --accent: #146c63;
+  --accent-2: #c75832;
+  --soft: #eef8f6;
+  --danger: #b42318;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+.topbar p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button,
+.tab {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover,
+.tab.active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+main {
+  width: min(1180px, calc(100% - 32px));
+  margin: 28px auto;
+}
+
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.panel-header,
+.workspace,
+.stats-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.panel-header {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.workspace {
+  grid-template-columns: 280px 1fr;
+  align-items: start;
+}
+
+.side {
+  position: sticky;
+  top: 18px;
+}
+
+.fill {
+  min-height: 520px;
+}
+
+.upload-box,
+.composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 12px;
+  font: inherit;
+  background: #fff;
+}
+
+textarea {
+  min-height: 116px;
+  resize: vertical;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.status,
+.message {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status.ok {
+  color: var(--accent);
+}
+
+.status.error,
+.error {
+  color: var(--danger);
+}
+
+.document-list,
+.quiz-list,
+.topic-list {
+  display: grid;
+  gap: 12px;
+}
+
+.document,
+.question,
+.topic-row,
+.chat-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+
+.document.active {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+
+.chat-log {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 390px;
+  margin: 16px 0;
+}
+
+.chat-item .role,
+.question .meta {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sources {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.options {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.metric {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.metric span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 30px;
+}
+
+.trend {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  min-height: 150px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.bar {
+  flex: 1;
+  min-width: 12px;
+  background: var(--accent-2);
+  border-radius: 6px 6px 0 0;
+}
+
+@media (max-width: 820px) {
+  .topbar,
+  .workspace,
+  .upload-box,
+  .composer,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    display: grid;
+    padding: 20px;
+  }
+
+  .side {
+    position: static;
+  }
+}
