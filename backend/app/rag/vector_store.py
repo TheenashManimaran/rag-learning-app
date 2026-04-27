@@ -1,25 +1,38 @@
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 import faiss
 import numpy as np
 
-from app.core.config import settings
+from app.core.config import DATA_DIR, settings
 from app.core.gemini import gemini
 
 
 class VectorStore:
-    def _base_path(self, user_id: str, document_id: str) -> Path:
-        safe = f"u_{user_id}_d_{document_id}".replace("-", "_")
-        path = settings.chroma_dir / safe
-        path.mkdir(parents=True, exist_ok=True)
+    def _safe_name(self, value: str) -> str:
+        return re.sub(r"[^A-Za-z0-9_.-]", "_", value).strip("._") or "default"
+
+    def _base_path(self, user_id: str, document_id: str, create: bool = False) -> Path:
+        safe_user = self._safe_name(user_id)
+        safe_document = self._safe_name(document_id)
+        path = settings.faiss_index_dir / f"u_{safe_user}_d_{safe_document}"
+        if create:
+            path.mkdir(parents=True, exist_ok=True)
         return path
 
+    def _legacy_base_path(self, user_id: str, document_id: str) -> Path:
+        safe_user = self._safe_name(user_id)
+        safe_document = self._safe_name(document_id)
+        return DATA_DIR / "indexes" / f"u_{safe_user}_d_{safe_document}"
+
     def add_chunks(self, user_id: str, document_id: str, chunks: list[dict[str, Any]]) -> None:
-        base_path = self._base_path(user_id, document_id)
+        base_path = self._base_path(user_id, document_id, create=True)
         texts = [str(chunk["text"]) for chunk in chunks]
         embeddings = np.array(gemini.embed(texts, task_type="RETRIEVAL_DOCUMENT"), dtype="float32")
+        if embeddings.size == 0 or embeddings.ndim != 2:
+            raise ValueError("Could not create embeddings for this document.")
         faiss.normalize_L2(embeddings)
         index = faiss.IndexFlatIP(embeddings.shape[1])
         index.add(embeddings)
@@ -39,6 +52,13 @@ class VectorStore:
         base_path = self._base_path(user_id, document_id)
         index_path = base_path / "index.faiss"
         metadata_path = base_path / "metadata.json"
+        if not index_path.exists() or not metadata_path.exists():
+            legacy_path = self._legacy_base_path(user_id, document_id)
+            legacy_index_path = legacy_path / "index.faiss"
+            legacy_metadata_path = legacy_path / "metadata.json"
+            if legacy_index_path.exists() and legacy_metadata_path.exists():
+                index_path = legacy_index_path
+                metadata_path = legacy_metadata_path
         if not index_path.exists() or not metadata_path.exists():
             return []
 

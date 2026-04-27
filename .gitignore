@@ -23,7 +23,14 @@ dist/
 *.egg-info/
 
 # FastAPI / local runtime data
-backend/data/
+backend/data/*
+!backend/data/.gitkeep
+!backend/data/uploads/
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+!backend/data/faiss/
+backend/data/faiss/*
+!backend/data/faiss/.gitkeep
 *.db
 *.sqlite
 *.sqlite3

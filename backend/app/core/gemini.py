@@ -7,6 +7,12 @@ from google.genai import types
 from app.core.config import settings
 
 
+MISSING_API_KEY_MESSAGE = (
+    "GEMINI_API_KEY is required. Create a .env file from .env.example "
+    "in the project root and set GEMINI_API_KEY."
+)
+
+
 class GeminiClient:
     def __init__(self) -> None:
         if not settings.gemini_api_key:
@@ -20,7 +26,7 @@ class GeminiClient:
 
     def embed(self, texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
         if not self.client:
-            raise RuntimeError("GEMINI_API_KEY is required for document embeddings.")
+            raise RuntimeError(MISSING_API_KEY_MESSAGE)
 
         vectors: list[list[float]] = []
         for text in texts:
@@ -38,7 +44,7 @@ class GeminiClient:
 
     def generate_text(self, prompt: str, temperature: float = 0.2) -> str:
         if not self.client:
-            raise RuntimeError("GEMINI_API_KEY is required for AI generation.")
+            raise RuntimeError(MISSING_API_KEY_MESSAGE)
 
         response = self.client.models.generate_content(
             model=settings.gemini_generation_model,

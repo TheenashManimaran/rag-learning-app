@@ -1,6 +1,7 @@
 import uuid
 
 from app.core.gemini import gemini
+from app.mcp.adaptive import recommend_next
 from app.mcp.code_execution import run_python_solution
 from app.storage import database
 
@@ -51,5 +52,5 @@ Scoring dimensions:
     return {
         "score": round(score * 100, 1),
         "feedback": feedback,
-        "next": __import__("app.mcp.adaptive", fromlist=["recommend_next"]).recommend_next(user_id),
+        "next": recommend_next(user_id),
     }

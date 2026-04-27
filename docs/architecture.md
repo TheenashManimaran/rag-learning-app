@@ -34,7 +34,10 @@ rag-learning-app/
     data/           uploaded PDFs, FAISS indexes, SQLite DB
   frontend/         static HTML/CSS/vanilla JS app
   docs/             developer architecture notes
+  .env.example      local environment template
   requirements.txt
+  run.bat           Windows startup script
+  run.sh            Git Bash/Linux/macOS startup script
   README.md
 ```
 
@@ -107,8 +110,11 @@ Tables:
 
 Vector data:
 
-- Stored under `backend/data/indexes`.
+- New indexes are stored under `backend/data/faiss`.
 - Each document gets a FAISS index plus JSON metadata.
+- Legacy local indexes under `backend/data/indexes` are still readable for compatibility, but new writes do not use that folder.
+
+Runtime folders are created automatically by `backend/app/core/config.py` and `backend/app/main.py`.
 
 ## AI Models
 
@@ -120,6 +126,8 @@ Defaults live in `backend/app/core/config.py`.
 
 Environment overrides are loaded from `.env` in the project root.
 
+Path overrides such as `DATABASE_PATH`, `UPLOAD_DIR`, and `FAISS_INDEX_DIR` can be relative to the project root.
+
 ## Frontend
 
 The frontend is a static app served by FastAPI:
@@ -130,7 +138,15 @@ The frontend is a static app served by FastAPI:
 
 The app currently uses a simple default user id: `default`.
 
+## Local Startup
+
+The repository includes startup scripts at the project root:
+
+- `run.bat` for Windows shells.
+- `run.sh` for Git Bash on Windows, Linux, and macOS.
+
+Both scripts require Python 3.12, create or repair `venv`, install dependencies with `python -m pip`, create `.env` from `.env.example` if missing, and start FastAPI with `python -m uvicorn`. Module execution is used instead of direct launcher shims because some Windows security policies block generated files such as `pip.exe` or `uvicorn` under `venv/Scripts`.
+
 ## Security Notes
 
 The coding evaluator blocks dangerous imports and functions and applies a timeout. This is useful for local development, but a production public deployment should move execution into an OS/container sandbox with strict CPU, memory, file, and network isolation.
-

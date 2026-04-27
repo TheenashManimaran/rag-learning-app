@@ -48,6 +48,9 @@ async def ingest_pdf(file: UploadFile, user_id: str) -> dict:
 def reset_document_artifacts(document_id: str) -> None:
     for path in settings.upload_dir.glob(f"{document_id}_*"):
         path.unlink(missing_ok=True)
-    collection_path = settings.chroma_dir / f"u_default_d_{document_id}".replace("-", "_")
-    if collection_path.exists():
-        shutil.rmtree(collection_path)
+    for collection_path in (
+        vector_store._base_path("default", document_id),
+        vector_store._legacy_base_path("default", document_id),
+    ):
+        if collection_path.exists():
+            shutil.rmtree(collection_path)

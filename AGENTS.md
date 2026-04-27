@@ -15,13 +15,25 @@ Build and maintain a production-ready adaptive learning app where uploaded educa
 
 ## Run Commands
 
-From PowerShell:
+Preferred local startup from the project root:
+
+```powershell
+.\run.bat
+```
+
+Git Bash on Windows and Unix-like shells:
+
+```bash
+./run.sh
+```
+
+Manual PowerShell run:
 
 ```powershell
 cd E:\RagProject\Project1\rag-learning-app
 .\venv\Scripts\Activate.ps1
 cd backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 App URL:
@@ -50,9 +62,12 @@ Expected keys:
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_GENERATION_MODEL=gemini-2.5-flash
 GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+DATABASE_PATH=backend/data/learning.db
+UPLOAD_DIR=backend/data/uploads
+FAISS_INDEX_DIR=backend/data/faiss
 ```
 
-The model variables are optional unless overriding defaults.
+All variables except `GEMINI_API_KEY` are optional unless overriding defaults. Relative paths are resolved from the project root.
 
 ## Code Ownership Map
 
@@ -76,6 +91,8 @@ The model variables are optional unless overriding defaults.
 
 - Keep backend modules separated by responsibility. Do not collapse RAG and MCP logic into route handlers.
 - Do not install Python packages globally. Use `venv`.
+- Use Python 3.12. The startup scripts rebuild `venv` if it was created with the wrong Python version.
+- Prefer `python -m pip` and `python -m uvicorn` over direct `pip` or `uvicorn` launchers, especially on Windows where local policy may block generated `.exe` shims.
 - Do not commit real API keys.
 - Keep `.env` local and out of generated documentation except for placeholder examples.
 - Preserve the strict grounded-answer behavior: answers must only use retrieved context.
@@ -104,5 +121,5 @@ After frontend edits:
 - Single local user id is `default`.
 - PDFs contain selectable text.
 - Gemini API key is valid and has access to the configured models.
+- New FAISS indexes are stored under `backend/data/faiss`; old local indexes under `backend/data/indexes` remain readable for compatibility.
 - The app is intended for local development unless extra production hardening is added.
-

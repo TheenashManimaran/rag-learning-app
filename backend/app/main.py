@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
-from app.core.config import BASE_DIR, settings
+from app.core.config import BASE_DIR, ensure_runtime_dirs, settings
 from app.storage.database import init_db
 
 
 def create_app() -> FastAPI:
+    ensure_runtime_dirs()
     init_db()
     app = FastAPI(title=settings.app_name)
     app.add_middleware(
