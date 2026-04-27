@@ -150,7 +150,7 @@ Progress tracker:
 - File: `backend/app/mcp/progress.py`
 - Entry point: `progress_summary(user_id)`
 - Reads attempts from SQLite.
-- Computes average score, attempt count, weak topics, topic performance, and recent trend.
+- Computes average score, attempt count, weak topics, topic performance, accuracy, optional timing, and recent trend.
 - Weak topics are topics with average score below 70 percent.
 
 ## 6. Key Workflows
@@ -175,18 +175,21 @@ Question answering flow:
 4. FAISS returns top-k source chunks.
 5. `qa_service.py` builds a strict grounded prompt.
 6. Gemini answers only from retrieved context.
-7. API returns the answer and source chunks.
+7. API returns the answer, source chunks, confidence level, and explanation.
 
 Quiz generation flow:
 
-1. Frontend sends `document_id`, `count`, and `user_id` to `POST /api/quiz`.
-2. Backend verifies the document.
-3. `adaptive.py` recommends difficulty based on past attempts.
-4. FAISS retrieves context using weak topics and key-concept query terms.
-5. Previous questions are loaded to reduce repetition.
-6. Gemini generates strict JSON quiz data.
-7. Questions are normalized, assigned IDs, and stored in SQLite.
-8. Correct answers are hidden before returning to the frontend.
+1. Frontend can call legacy `POST /api/quiz` for PDF mixed quizzes or `POST /api/generate-quiz` for configurable generation.
+2. Advanced generation accepts `input_type`: `pdf`, `text`, or `topic`.
+3. Advanced generation accepts `quiz_type`: `mcq`, `true_false`, `fill_blank`, `short`, or `mixed`.
+4. If difficulty is omitted, `adaptive.py` recommends difficulty based on past attempts.
+5. PDF mode retrieves context from FAISS and remains RAG-grounded.
+6. Text mode uses supplied text as context.
+7. Topic mode first tries FAISS retrieval when `document_id` is provided; if no good match is found, Gemini creates conceptual study context.
+8. Previous and recently incorrect questions are loaded to reduce repetition and support retry-style practice.
+9. Gemini generates strict JSON quiz data with explanations.
+10. Questions are normalized, assigned IDs, and stored in SQLite.
+11. Correct answers are hidden before returning to the frontend.
 
 Evaluation flow:
 
@@ -195,8 +198,8 @@ Evaluation flow:
 3. MCQ answers are checked directly.
 4. Coding answers run through the code execution tool.
 5. Subjective answers are scored by Gemini.
-6. Attempt data is saved to SQLite.
-7. API returns score, feedback, and next adaptive recommendation.
+6. Attempt data, correctness, and optional time taken are saved to SQLite.
+7. API returns score, correctness, feedback, and next adaptive recommendation.
 
 ## 7. API Endpoints
 
@@ -283,11 +286,68 @@ Response:
       "page": 3,
       "score": 0.82
     }
-  ]
+  ],
+  "confidence": "high",
+  "explanation": "Why the answer follows from the retrieved context."
+}
+```
+
+### `POST /api/generate-quiz`
+
+Request body:
+
+```json
+{
+  "user_id": "default",
+  "document_id": "optional document uuid",
+  "input_type": "pdf",
+  "quiz_type": "mixed",
+  "difficulty": "medium",
+  "count": 5,
+  "topic": "optional topic",
+  "text": "optional source text"
+}
+```
+
+Allowed values:
+
+- `input_type`: `pdf`, `text`, `topic`
+- `quiz_type`: `mcq`, `true_false`, `fill_blank`, `short`, `mixed`
+- `difficulty`: `easy`, `medium`, `hard`, or omitted to use adaptive difficulty
+
+Response:
+
+```json
+{
+  "profile": {
+    "difficulty": "medium",
+    "weak_topics": [],
+    "reason": "Based on average score and weakest topic history.",
+    "source": "pdf",
+    "topic_found_in_document": true
+  },
+  "questions": [
+    {
+      "id": "question uuid",
+      "document_id": "document uuid",
+      "type": "true_false",
+      "topic": "Topic",
+      "difficulty": "medium",
+      "question": "Question text?",
+      "options": ["True", "False"],
+      "explanation": "Why the answer is correct, citing context.",
+      "rubric": "",
+      "starter_code": "",
+      "test_cases": []
+    }
+  ],
+  "sources": []
 }
 ```
 
 ### `POST /api/quiz`
+
+Legacy endpoint for PDF-based mixed adaptive quizzes. Prefer `/api/generate-quiz` for configurable quiz type and input mode.
 
 Request body:
 
@@ -333,7 +393,8 @@ Request body:
 {
   "question_id": "question uuid",
   "answer": "Student answer",
-  "user_id": "default"
+  "user_id": "default",
+  "time_taken_seconds": 42.5
 }
 ```
 
@@ -343,6 +404,7 @@ Response:
 {
   "score": 80.0,
   "feedback": "Brief feedback.",
+  "is_correct": true,
   "next": {
     "difficulty": "medium",
     "weak_topics": ["Topic"],
@@ -368,14 +430,17 @@ Response:
     {
       "topic": "Topic",
       "average": 65.0,
-      "attempts": 2
+      "accuracy": 50.0,
+      "attempts": 2,
+      "average_time_seconds": 31.2
     }
   ],
   "trend": [
     {
       "date": "ISO timestamp",
       "score": 80.0,
-      "topic": "Topic"
+      "topic": "Topic",
+      "is_correct": true
     }
   ]
 }
@@ -397,7 +462,7 @@ SQLite:
 - Tables:
   - `documents`: uploaded document metadata.
   - `questions`: generated quiz questions and hidden answer payloads.
-  - `attempts`: scored submissions and feedback history.
+  - `attempts`: scored submissions, correctness, optional time taken, and feedback history.
 
 File storage:
 
@@ -457,6 +522,7 @@ Only `GEMINI_API_KEY` is required for AI-powered workflows. Other variables are 
 
 - Gemini can return transient service errors such as 503; there is no retry/backoff layer yet.
 - Gemini must return strict JSON for quiz generation and subjective grading; malformed JSON currently raises an error.
+- Topic mode can fall back to conceptual Gemini-generated context when the topic is not found in a RAG document, so it is not document-grounded unless `topic_found_in_document` is true.
 - FAISS storage is local-file based and one index is stored per document. There is no global index, compaction, migration system, or concurrent write coordination.
 - Legacy FAISS indexes under `backend/data/indexes` are readable but new writes go to `backend/data/faiss`.
 - PDFs must contain selectable text. There is no OCR fallback for scanned documents.
@@ -533,6 +599,7 @@ curl http://127.0.0.1:8000/api/health
 - Add OCR support for scanned PDFs.
 - Add retry/backoff for Gemini 503 and rate-limit errors.
 - Add JSON repair or schema validation for Gemini responses.
+- Add a dedicated retry-wrong-questions endpoint and frontend flow.
 - Add background jobs for large PDF ingestion.
 - Add tests for routes, chunking, retrieval, database operations, and MCP tools.
 - Add a production code-execution sandbox with CPU, memory, filesystem, and network isolation.

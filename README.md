@@ -109,6 +109,14 @@ curl -X POST http://127.0.0.1:8000/api/ask \
   -d "{\"user_id\":\"default\",\"document_id\":\"DOCUMENT_ID\",\"question\":\"What is this about?\"}"
 ```
 
+Generate a configurable quiz:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/generate-quiz \
+  -H "Content-Type: application/json" \
+  -d "{\"user_id\":\"default\",\"document_id\":\"DOCUMENT_ID\",\"input_type\":\"pdf\",\"quiz_type\":\"mixed\",\"difficulty\":\"medium\",\"count\":5}"
+```
+
 Generate a quiz:
 
 ```bash
@@ -134,6 +142,7 @@ curl "http://127.0.0.1:8000/api/dashboard?user_id=default"
 ## Notes
 
 - `GEMINI_API_KEY` is required for PDF ingestion, Q&A, quiz generation, and subjective answer evaluation.
+- `/api/generate-quiz` supports PDF, text, and topic input with MCQ, true/false, fill-blank, short-answer, and mixed quiz types.
 - FAISS indexes are saved to disk and loaded on each retrieval.
 - Existing legacy indexes under `backend/data/indexes` are still readable, but new indexes are written to `backend/data/faiss`.
 - SQLite tables are created automatically on backend startup.

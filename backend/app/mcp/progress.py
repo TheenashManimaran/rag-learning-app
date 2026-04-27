@@ -15,14 +15,18 @@ def progress_summary(user_id: str) -> dict:
         }
 
     topic_scores: dict[str, list[float]] = defaultdict(list)
+    topic_times: dict[str, list[float]] = defaultdict(list)
     trend = []
     for attempt in reversed(attempts):
         topic_scores[attempt["topic"]].append(float(attempt["score"]))
+        if attempt.get("time_taken_seconds") is not None:
+            topic_times[attempt["topic"]].append(float(attempt["time_taken_seconds"]))
         trend.append(
             {
                 "date": attempt["created_at"],
                 "score": round(float(attempt["score"]) * 100, 1),
                 "topic": attempt["topic"],
+                "is_correct": bool(attempt.get("is_correct", float(attempt["score"]) >= 0.7)),
             }
         )
 
@@ -30,7 +34,13 @@ def progress_summary(user_id: str) -> dict:
         {
             "topic": topic,
             "average": round(sum(scores) / len(scores) * 100, 1),
+            "accuracy": round(sum(1 for score in scores if score >= 0.7) / len(scores) * 100, 1),
             "attempts": len(scores),
+            "average_time_seconds": (
+                round(sum(topic_times[topic]) / len(topic_times[topic]), 1)
+                if topic_times.get(topic)
+                else None
+            ),
         }
         for topic, scores in topic_scores.items()
     ]

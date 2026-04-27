@@ -14,7 +14,7 @@ def utc_now() -> str:
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(settings.database_path)
+    conn = sqlite3.connect(settings.database_path, timeout=30)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -59,10 +59,23 @@ def init_db() -> None:
                 difficulty TEXT NOT NULL,
                 score REAL NOT NULL,
                 feedback TEXT NOT NULL,
+                is_correct INTEGER NOT NULL DEFAULT 0,
+                time_taken_seconds REAL,
                 created_at TEXT NOT NULL
             );
             """
         )
+        _ensure_column(conn, "attempts", "is_correct", "INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "attempts", "time_taken_seconds", "REAL")
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {
+        row["name"]
+        for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+    }
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def add_document(doc: dict[str, Any]) -> None:
@@ -101,15 +114,39 @@ def get_document(document_id: str, user_id: str) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
-def previous_question_texts(user_id: str, document_id: str, limit: int = 30) -> list[str]:
+def previous_question_texts(user_id: str, document_id: str | None, limit: int = 30) -> list[str]:
+    with connect() as conn:
+        if document_id:
+            rows = conn.execute(
+                """
+                SELECT question FROM questions
+                WHERE user_id = ? AND document_id = ?
+                ORDER BY created_at DESC LIMIT ?
+                """,
+                (user_id, document_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT question FROM questions
+                WHERE user_id = ?
+                ORDER BY created_at DESC LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+    return [row["question"] for row in rows]
+
+
+def incorrect_question_texts(user_id: str, limit: int = 10) -> list[str]:
     with connect() as conn:
         rows = conn.execute(
             """
-            SELECT question FROM questions
-            WHERE user_id = ? AND document_id = ?
-            ORDER BY created_at DESC LIMIT ?
+            SELECT q.question FROM attempts a
+            JOIN questions q ON q.id = a.question_id
+            WHERE a.user_id = ? AND a.score < 0.7
+            ORDER BY a.created_at DESC LIMIT ?
             """,
-            (user_id, document_id, limit),
+            (user_id, limit),
         ).fetchall()
     return [row["question"] for row in rows]
 
@@ -153,19 +190,21 @@ def add_attempt(attempt: dict[str, Any]) -> None:
         conn.execute(
             """
             INSERT INTO attempts
-            (id, user_id, document_id, question_id, question_type, topic, difficulty, score, feedback, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, user_id, document_id, question_id, question_type, topic, difficulty, score, feedback, is_correct, time_taken_seconds, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 attempt["id"],
                 attempt["user_id"],
-                attempt["document_id"],
+                attempt.get("document_id") or "",
                 attempt["question_id"],
                 attempt["question_type"],
                 attempt["topic"],
                 attempt["difficulty"],
                 float(attempt["score"]),
                 attempt["feedback"],
+                1 if float(attempt["score"]) >= 0.7 else 0,
+                attempt.get("time_taken_seconds"),
                 utc_now(),
             ),
         )

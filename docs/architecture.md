@@ -67,13 +67,16 @@ Endpoint: `POST /api/ask`
 
 ### Quiz Generation
 
-Endpoint: `POST /api/quiz`
+Endpoints: `POST /api/quiz`, `POST /api/generate-quiz`
 
-1. Reads progress history via MCP adaptive tool.
-2. Retrieves relevant document context.
-3. Sends context, difficulty, weak topics, and previous questions to Gemini.
-4. Requires strict JSON containing MCQ, subjective, and optionally coding questions.
-5. Stores generated questions in SQLite, including hidden answer/rubric metadata.
+1. Reads progress history via MCP adaptive tool unless difficulty is specified.
+2. Supports PDF, text, and topic input modes.
+3. Supports MCQ, true/false, fill-blank, short-answer, and mixed quiz types.
+4. Retrieves relevant document context for PDF mode.
+5. Topic mode checks the RAG document first when a document is provided, then falls back to conceptual Gemini context if no strong match exists.
+6. Sends context, difficulty, quiz type, previous questions, and recent incorrect questions to Gemini.
+7. Requires strict JSON containing explanations grounded in the supplied context.
+8. Stores generated questions in SQLite, including hidden answer/rubric metadata.
 
 ### Quiz Submission
 
@@ -86,6 +89,7 @@ Evaluation is delegated to MCP tools:
 - Coding: runs submitted Python `solve(...)` against JSON test cases.
 
 Each attempt is persisted and the adaptive profile is recalculated.
+Attempts also store correctness and optional time taken for performance analytics.
 
 ## MCP Tool Layer
 
