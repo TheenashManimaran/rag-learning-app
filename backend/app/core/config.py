@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     upload_dir: Path = DATA_DIR / "uploads"
     faiss_index_dir: Path = DATA_DIR / "faiss"
     gemini_api_key: str | None = None
+    xai_api_key: str | None = None
+    groq_api_key: str | None = None
+    mistral_api_key: str | None = None
+    librarian_model: str = "gemini/gemini-3-flash"
+    orchestrator_model: str = "groq/llama-3.3-70b-versatile"
+    judge_model: str = "mistral/open-mistral-nemo"
     gemini_generation_model: str = "gemini-2.5-flash"
     gemini_embedding_model: str = "gemini-embedding-001"
     gemini_embedding_dimensions: int = 768
@@ -36,8 +42,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
-        env_prefix="",
         extra="ignore",
+        case_sensitive=False
     )
 
 
