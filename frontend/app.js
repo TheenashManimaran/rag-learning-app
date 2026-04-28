@@ -134,17 +134,31 @@ function appendChat(role, html) {
 }
 
 async function generateQuiz() {
+  const inputType = qs("#quizInputType").value;
   const documentId = qs("#quizDocument").value;
-  if (!documentId) return;
-  qs("#quizList").innerHTML = '<div class="message">Generating grounded questions...</div>';
+  const topic = qs("#quizTopic").value.trim();
+  const text = qs("#quizText").value.trim();
+
+  if (inputType === "pdf" && !documentId) return;
+  if (inputType === "topic" && !topic) return;
+  if (inputType === "text" && !text) return;
+
+  const difficultyVal = qs("#quizDifficulty").value;
+
+  qs("#quizList").innerHTML = '<div class="message">Generating grouped questions...</div>';
   try {
-    const data = await api("/quiz", {
+    const data = await api("/generate-quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: USER_ID,
-        document_id: documentId,
+        input_type: inputType,
+        quiz_type: qs("#quizType").value,
+        difficulty: difficultyVal === "auto" ? null : difficultyVal,
         count: Number(qs("#quizCount").value),
+        document_id: inputType === "pdf" || documentId ? documentId : null,
+        topic: inputType === "topic" ? topic : null,
+        text: inputType === "text" ? text : null,
       }),
     });
     qs("#adaptiveProfile").textContent = `Difficulty: ${data.profile.difficulty}. Weak topics: ${data.profile.weak_topics.join(", ") || "none yet"}.`;
@@ -166,8 +180,9 @@ function renderQuiz(questions) {
 }
 
 function renderQuestion(question) {
+  const isChoice = question.type === "mcq" || question.type === "true_false";
   const answerControl =
-    question.type === "mcq"
+    isChoice && question.options
       ? `<div class="options">${question.options
           .map(
             (option) => `
@@ -181,11 +196,14 @@ function renderQuestion(question) {
 
   return `
     <article class="question" id="question-${question.id}">
-      <span class="meta">${question.type} · ${question.topic} · ${question.difficulty}</span>
+      <span class="meta">${question.type.replace("_", " ")} · ${question.topic} · ${question.difficulty}</span>
       <p>${escapeHtml(question.question)}</p>
       ${answerControl}
       <button class="submit-answer" type="button" data-question="${question.id}">Submit answer</button>
       <div class="message" id="feedback-${question.id}"></div>
+      <div class="explanation" id="explanation-${question.id}">
+        <strong>Explanation:</strong> ${escapeHtml(question.explanation || "")}
+      </div>
     </article>
   `;
 }
@@ -202,9 +220,19 @@ async function submitAnswer(questionId) {
       body: JSON.stringify({ user_id: USER_ID, question_id: questionId, answer }),
     });
     qs(`#feedback-${questionId}`).textContent = `Score: ${data.score}%. ${data.feedback} Next difficulty: ${data.next.difficulty}.`;
+    qs(`#feedback-${questionId}`).className = "message " + (data.is_correct ? "ok" : "error");
+
+    const explanationEl = qs(`#explanation-${questionId}`);
+    if (explanationEl) {
+        explanationEl.classList.add("show");
+    }
+
+    if (data.is_correct && checked) {
+        checked.closest('.option').classList.add("correct-answer");
+    }
   } catch (error) {
     qs(`#feedback-${questionId}`).textContent = error.message;
-    qs(`#feedback-${questionId}`).classList.add("error");
+    qs(`#feedback-${questionId}`).className = "message error";
   }
 }
 
@@ -239,5 +267,22 @@ qs("#refreshDocs").addEventListener("click", loadDocuments);
 qs("#askForm").addEventListener("submit", askQuestion);
 qs("#generateQuiz").addEventListener("click", generateQuiz);
 
+qs("#quizInputType").addEventListener("change", (e) => {
+  const val = e.target.value;
+  qs("#quizDocumentContainer").classList.toggle("hidden", val !== "pdf");
+  qs("#quizTopicContainer").classList.toggle("hidden", val !== "topic");
+  qs("#quizTextContainer").classList.toggle("hidden", val !== "text");
+});
+
+qs("#retryWrong").addEventListener("click", () => {
+   qs("#quizInputType").value = "topic";
+   qs("#quizTopic").value = "Review of weak concepts and previously missed topics";
+   qs("#quizInputType").dispatchEvent(new Event('change'));
+   qs("#quizType").value = "mixed";
+   qs("#quizDifficulty").value = "auto";
+   generateQuiz();
+});
+
 checkHealth();
 loadDocuments().catch(() => {});
+

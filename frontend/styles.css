@@ -270,6 +270,42 @@ label {
   border-radius: 6px 6px 0 0;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.explanation {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--soft);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--ink);
+  display: none;
+}
+
+.explanation.show {
+  display: block;
+}
+
+.correct-answer {
+  background: var(--soft);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.retry-button {
+  background: var(--accent-2);
+  color: white;
+  border-color: var(--accent-2);
+}
+
+.retry-button:hover {
+  background: #a34625;
+  border-color: #a34625;
+}
+
 @media (max-width: 820px) {
   .topbar,
   .workspace,

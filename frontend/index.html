@@ -65,18 +65,68 @@
           <aside class="panel side">
             <h2>Quiz Setup</h2>
             <label>
+              Input Type
+              <select id="quizInputType">
+                <option value="pdf">Document</option>
+                <option value="topic">Topic</option>
+                <option value="text">Text Snippet</option>
+              </select>
+            </label>
+
+            <label id="quizDocumentContainer">
               Document
               <select id="quizDocument"></select>
             </label>
+
+            <label id="quizTopicContainer" class="hidden">
+              Topic
+              <input id="quizTopic" type="text" placeholder="e.g., Photosynthesis" />
+            </label>
+
+            <label id="quizTextContainer" class="hidden">
+              Text
+              <textarea id="quizText" placeholder="Paste source text here..."></textarea>
+            </label>
+
+            <label>
+              Quiz Type
+              <select id="quizType">
+                <option value="mixed">Mixed</option>
+                <option value="mcq">Multiple Choice</option>
+                <option value="true_false">True / False</option>
+                <option value="fill_blank">Fill in the Blank</option>
+                <option value="short">Short Answer</option>
+              </select>
+            </label>
+
+            <label>
+              Difficulty
+              <select id="quizDifficulty">
+                <option value="auto">Auto (Adaptive)</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
+
             <label>
               Questions
-              <input id="quizCount" type="number" min="1" max="10" value="5" />
+              <select id="quizCount">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+              </select>
             </label>
+
             <button id="generateQuiz" type="button">Generate quiz</button>
             <div id="adaptiveProfile" class="message"></div>
           </aside>
           <section class="panel fill">
-            <h2>Quiz</h2>
+            <div class="panel-header">
+              <h2>Quiz</h2>
+              <button id="retryWrong" class="retry-button" type="button">Retry Wrong Questions</button>
+            </div>
             <div id="quizList" class="quiz-list"></div>
           </section>
         </div>

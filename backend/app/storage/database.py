@@ -14,7 +14,7 @@ def utc_now() -> str:
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(settings.database_path, timeout=30)
+    conn = sqlite3.connect(settings.database_path, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
